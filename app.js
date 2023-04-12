@@ -34,7 +34,10 @@ app.post('/register',(req,res)=>{
     const newUser = new User({
         email: req.body.username,
         password: req.body.password
-    })
+    });
+    newUser.save()
+    .then(res.render('secrets'))
+    .catch('sometghing wrong, file is not saved')
 
 })
 
