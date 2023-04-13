@@ -4,7 +4,9 @@ const express = require('express');
 const ejs = require('ejs');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
-const md5 = require('md5');
+const bcrypt = require('bcrypt');
+const saltRounds = 10 ;
+
 
 const app = express();
 
@@ -35,29 +37,35 @@ app.get('/register', (req,res)=>{
     res.render('register')
 });
 
-console.log(md5('852456'));
-
 app.post('/register',(req,res)=>{
-    const newUser = new User({
-        email: req.body.username,
-        password: md5(req.body.password)
-    });
-    newUser.save()
-    .then(res.render('secrets'))
-    .catch('sometghing wrong, file is not saved')
+    
+    bcrypt.hash(req.body.password, saltRounds)
+    .then(hash=>{
+        const newUser = new User({
+            email: req.body.username,
+            password: hash
+        });
+        newUser.save()
+        .then(res.render('secrets'))
+        .catch('sometghing wrong, file is not saved')
+    })
+    .catch('something wrong')
 });
 
 app.post('/login', (req,res)=>{
+    
     const username = req.body.username
-    const password = md5(req.body.password)
+    const password = req.body.password
 
     User.findOne({email: username})
     .then(foundUser=>{
-        if(foundUser.email == username && foundUser.password == password){
-            res.render('secrets')
-        } else{
-            res.send('your email does not exist or the password is incorrect.')
-        }
+        bcrypt.compare(password, foundUser.password).then(result =>{
+            if(result){
+                res.render('secrets')
+            } else{
+                res.send('your email does not exist or the password is incorrect.')
+            }
+        })
     })
 })
 
